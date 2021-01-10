@@ -35,7 +35,7 @@ class tank_camera(): #server_ip = '192.168.178.47', server_port = 8000
         
     def gstreamer_pipeline(self,capture_width=1280, capture_height=720,
                             display_width=128, display_height=96,
-                            framerate=120, flip_method=0,):
+                            framerate=120, flip_method=2,):
         return ("nvarguscamerasrc ! "
                 "video/x-raw(memory:NVMM), "
                 "width=(int)%d, height=(int)%d, "
@@ -53,7 +53,7 @@ class tank_camera(): #server_ip = '192.168.178.47', server_port = 8000
         #model = tf.keras.models.load_model(model_path)
         saved_model_loaded = tf.saved_model.load(model_path, tags=[tag_constants.SERVING])
         infer = saved_model_loaded.signatures['serving_default']
-        cap = cv2.VideoCapture(self.gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
+        cap = cv2.VideoCapture(self.gstreamer_pipeline(flip_method=2), cv2.CAP_GSTREAMER)
         turn = np.array([-1])
         #image = np.zeros((48,64,3))
         #imageHQ = np.zeros((640,480,3)) #np.zeros((144,192,3))
@@ -72,12 +72,13 @@ class tank_camera(): #server_ip = '192.168.178.47', server_port = 8000
                     PILimage = Image.fromarray(image) #before PIL.Image.fromarray...
                     image_fname = str(round(time.time()*100)) + ".jpg"
                     data = [image_fname, direction_str, speed_str]
-                    with open(r"training_data/train.csv", "a") as f:
+                    with open(r"../training_data/train.csv", "a") as f:
                         wrt = csv.writer(f, lineterminator="\n")
                         wrt.writerow(data)
-                    PILimage.save("training_data/" + image_fname)
+                    PILimage.save("../training_data/" + image_fname)
                 else: 
                     print("Unable to open camera")
+                time.sleep(0.1) # wait a little, otherwise the fps-rate is too high
                 
             elif mode_shm.value == 2: # auto mode, car is driving with AI-Power :-)
                 if cap.isOpened(): 

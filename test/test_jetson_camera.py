@@ -23,7 +23,7 @@ def gstreamer_pipeline(capture_width=640,capture_height=480,display_width=128,di
         % (capture_width,capture_height,framerate,flip_method,display_width,display_height,))
 
 
-cap = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
+cap = cv2.VideoCapture(gstreamer_pipeline(flip_method=2), cv2.CAP_GSTREAMER)
 
 time.sleep(2)
 
