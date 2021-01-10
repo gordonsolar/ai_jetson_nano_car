@@ -78,6 +78,7 @@ class tank_camera(): #server_ip = '192.168.178.47', server_port = 8000
                     PILimage.save("../training_data/" + image_fname)
                 else: 
                     print("Unable to open camera")
+                time.sleep(0.1) # wait a little, otherwise the fps-rate is too high
                 
             elif mode_shm.value == 2: # auto mode, car is driving with AI-Power :-)
                 if cap.isOpened(): 
