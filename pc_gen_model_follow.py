@@ -16,7 +16,7 @@ from tensorflow.python.compiler.tensorrt import trt_convert as trt
 
 
 # %% define constants
-train_dir_left = './training_data/' # Folder containing training data
+train_dir_left = '../training_data/' # Folder containing training data
 #train_dir_right = 'my_raspi_drives_AI/training_data_right/' # Folder containing training data
 rescale_image_shape = (96, 128, 1)#(64,48,1) # Shape of images (width=64px, height=48px, 3 colors)
 image_shape = (60,128,1)#(64,48,1) # Shape of images (width=64px, height=48px, 3 colors)
@@ -28,7 +28,7 @@ model_name_trt = 'model_follow_line_lego_01_trt_fp16'
 
 # %% Label training data
 # Load training data into Pandas data frame
-train_df_left = pd.read_csv('./training_data/train.csv', delimiter=',', names=['image_filename', 'steering_angle', 'acceleration'])
+train_df_left = pd.read_csv('../training_data/train.csv', delimiter=',', names=['image_filename', 'steering_angle', 'acceleration'])
 train_df_left['turn'] = -1
 #train_df_right = pd.read_csv('my_raspi_drives_AI/training_data_right/train.csv', delimiter=',', names=['image_filename', 'steering_angle', 'acceleration'])
 #train_df_right['turn'] = 1
@@ -158,7 +158,7 @@ model.compile(
 
 # %%
 # Network Training
-history = model.fit([X, X_turn], # model input
+history = model.fit(X, #[X, X_turn], # model input
           {'reg_out': YR}, #, 'class_out': YC}, # model outputs
           batch_size=16, #32, # number of forward passes before adjusting the weights using back propagation          
           epochs=10, #80, # how many times do we train on the entire dataset
