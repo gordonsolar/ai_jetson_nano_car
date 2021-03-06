@@ -5,7 +5,7 @@
 # %%
 from __future__ import absolute_import, division, print_function, unicode_literals
 from IPython import get_ipython
-#get_ipython().run_line_magic('matplotlib', 'inline')
+get_ipython().run_line_magic('matplotlib', 'inline')
 
 # %%
 import matplotlib.pyplot as plt
@@ -13,13 +13,13 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from tensorflow.python.compiler.tensorrt import trt_convert as trt
-
+import cv2
 
 # %% define constants
 train_dir_left = '../training_data/' # Folder containing training data
 #train_dir_right = 'my_raspi_drives_AI/training_data_right/' # Folder containing training data
-rescale_image_shape = (96, 128, 1)#(64,48,1) # Shape of images (width=64px, height=48px, 3 colors)
-image_shape = (60,128,1)#(64,48,1) # Shape of images (width=64px, height=48px, 3 colors)
+#rescale_image_shape = (96, 128, 1)#(64,48,1) # Shape of images (width=64px, height=48px, 3 colors)
+image_shape = (80,128,1)#(64,48,1) # Shape of images (width=64px, height=48px, 3 colors)
 max_y = 1 # Maximum steering angle
 debug = True
 
@@ -40,9 +40,10 @@ if debug:
 
 # %% define Helper functions
 def get_prep_image(fpath):
-    image = tf.keras.preprocessing.image.load_img(fpath, color_mode="grayscale", target_size=(rescale_image_shape[0], rescale_image_shape[1])) #
-    arr = tf.keras.preprocessing.image.img_to_array(image) / 255. # normalize RGB values to range [0,1]
-    arr = arr[-1*image_shape[0]:,:,:]
+    arr = np.array(cv2.imread(fpath, cv2.IMREAD_GRAYSCALE)) / 255.0
+    #image = tf.keras.preprocessing.image.load_img(fpath, color_mode="grayscale", target_size=(rescale_image_shape[0], rescale_image_shape[1])) #
+    #arr = tf.keras.preprocessing.image.img_to_array(image) / 255. # normalize RGB values to range [0,1]
+    #arr = arr[-1*image_shape[0]:,:,:]
     #arr=arr.reshape(arr.shape[0],arr.shape[1])
     return arr
 
@@ -81,7 +82,7 @@ y_reg_train = train_df.steering_angle.values / max_y
 #y_class_train = train_df.track_in_view.values  # classification model for track_in_view information not used currently
 
 # %% Data augmentation: Supplement data with horizontally flipped images and corresponding inverted steering and turn value
-augment = False
+augment = False#True
 if augment:
     X = np.append(x_train, np.flip(x_train, 2), axis=0)
     X_turn = np.append(x_turn_train, -x_turn_train, axis=0)
@@ -100,14 +101,14 @@ if debug:
     fig=plt.figure(figsize=(16, 8))
     columns = 2
     rows = 2
-    offs = 1005
+    offs = np.random.randint(1,X.shape[0]-10)
     for i in range(1, columns*rows +1):
         img = np.random.randint(10, size=(25,25))
         fig.add_subplot(rows, columns, i)
-        imi = X[offs+10*i]
-        imi = imi.reshape(imi.shape[0],imi.shape[1])
+        imi = X[offs + i]
+        #imi = imi.reshape(imi.shape[0],imi.shape[1])
         plt.imshow(imi)
-        plt.title('steering: ' + str(round(-YR[offs+10*i]*45,0)) + '°')
+        plt.title('steering: ' + str(round(-YR[offs + i]*45,0)) + '°')
     plt.tight_layout()
     plt.show()
 
@@ -160,8 +161,8 @@ model.compile(
 # Network Training
 history = model.fit(X, #[X, X_turn], # model input
           {'reg_out': YR}, #, 'class_out': YC}, # model outputs
-          batch_size=16, #32, # number of forward passes before adjusting the weights using back propagation          
-          epochs=10, #80, # how many times do we train on the entire dataset
+          batch_size=5, #32, # number of forward passes before adjusting the weights using back propagation          
+          epochs=6, #80, # how many times do we train on the entire dataset
           verbose=1,
           validation_split=0.4, # automatically create a 85%/15% test/validation data split and use for validation
           shuffle=False, # shuffle the training data order
