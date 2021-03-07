@@ -1,13 +1,13 @@
 # %% [markdown]
 # # Autonomous Vehicle Modell
-# ### CNN Architecture with extra go_left/go_right input
+# ### -- CNN Architecture to follow a path
 
 # %%
 from __future__ import absolute_import, division, print_function, unicode_literals
 from IPython import get_ipython
 get_ipython().run_line_magic('matplotlib', 'inline')
 
-# %%
+# %% -- import libraries
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -15,30 +15,7 @@ import tensorflow as tf
 from tensorflow.python.compiler.tensorrt import trt_convert as trt
 import cv2
 
-# %% define constants
-train_dir_left = '../training_data/' # Folder containing training data
-#train_dir_right = 'my_raspi_drives_AI/training_data_right/' # Folder containing training data
-#rescale_image_shape = (96, 128, 1)#(64,48,1) # Shape of images (width=64px, height=48px, 3 colors)
-image_shape = (80,128,1)#(64,48,1) # Shape of images (width=64px, height=48px, 3 colors)
-max_y = 1 # Maximum steering angle
-debug = True
-
-model_name = '/home/tom/jetson_nano/ai_jetson_nano_car/model_follow_line_lego_01'
-model_name_trt = 'model_follow_line_lego_01_trt_fp16'
-
-# %% Label training data
-# Load training data into Pandas data frame
-train_df_left = pd.read_csv('../training_data/train.csv', delimiter=',', names=['image_filename', 'steering_angle', 'acceleration'])
-train_df_left['turn'] = -1
-#train_df_right = pd.read_csv('my_raspi_drives_AI/training_data_right/train.csv', delimiter=',', names=['image_filename', 'steering_angle', 'acceleration'])
-#train_df_right['turn'] = 1
-
-# %% check data in data frames
-if debug:
-    train_df_left.head()
-    #train_df_right.head()
-
-# %% define Helper functions
+# %% -- define Helper functions
 def get_prep_image(fpath):
     arr = np.array(cv2.imread(fpath, cv2.IMREAD_GRAYSCALE)) / 255.0
     #image = tf.keras.preprocessing.image.load_img(fpath, color_mode="grayscale", target_size=(rescale_image_shape[0], rescale_image_shape[1])) #
@@ -62,27 +39,38 @@ def shuffle_arrays(arrays, set_seed=-1):
         rstate = np.random.RandomState(seed)
         rstate.shuffle(arr)
 
-# %% Add image rgb values to training data
-train_df_left['image'] = train_df_left.apply(lambda x: get_prep_image(train_dir_left + x.image_filename), 1)
-#train_df_right['image'] = train_df_right.apply(lambda x: get_prep_image(train_dir_right + x.image_filename), 1)
+# %% -- define constants
+train_dir = '../training_data/' # Folder containing training data with images and cvs file with steering / speed data
+image_shape = (80,128,1) # Shape of images (height, width, colors)
+max_y = 1 # Maximum steering angle
+debug = True # print extra information during script run
+augment = False #augment training data (flip images and steering angle data)?
+model_name = '/home/tom/jetson_nano/ai_jetson_nano_car/model_follow_line_lego_01' # where model is saved
+model_name_trt = 'model_follow_line_lego_01_trt_fp16' # where the reduced trt model is saved
 
-# %% check data frame after adding image data
+# %% -- Label training data
+# -- Load training data into Pandas data frame
+train_df_left = pd.read_csv('../training_data/train.csv', delimiter=',', names=['image_filename', 'steering_angle', 'acceleration'])
+train_df_left['turn'] = -1
+#train_df_right = pd.read_csv('my_raspi_drives_AI/training_data_right/train.csv', delimiter=',', names=['image_filename', 'steering_angle', 'acceleration'])
+#train_df_right['turn'] = 1
+
+# -- Add image rgb values to training data
+train_df_left['image'] = train_df_left.apply(lambda x: get_prep_image(train_dir + x.image_filename), 1)
+#train_df_right['image'] = train_df_right.apply(lambda x: get_prep_image(train_dir_right + x.image_filename), 1)
 train_df = train_df_left # 
 #train_df = pd.concat([train_df_left, train_df_right], ignore_index=True)
-if debug:
-    print(train_df.head())
 
-# %% convert data frames to numpy arrays suitable for model training (input and output) 
-# x_train are the input images 
-x_train = np.stack(train_df.image.values)
-# x_turn_train are the values for the turn direction 
-x_turn_train = train_df.turn.values
-# y_reg_train is the target steering angle obtained by regression model
+if debug: print(train_df.head()) # check data frame after adding image data
+
+# %% -- convert data frames to numpy arrays suitable for model training (input and output) 
+x_train = np.stack(train_df.image.values) # -- x_train are the input images
+x_turn_train = train_df.turn.values # -- x_turn_train are the values for the turn direction 
+# -- y_reg_train is the target steering angle obtained by regression model
 y_reg_train = train_df.steering_angle.values / max_y
 #y_class_train = train_df.track_in_view.values  # classification model for track_in_view information not used currently
 
-# %% Data augmentation: Supplement data with horizontally flipped images and corresponding inverted steering and turn value
-augment = False#True
+# %% -- Data augmentation: Supplement data with horizontally flipped images and corresponding inverted steering and turn value
 if augment:
     X = np.append(x_train, np.flip(x_train, 2), axis=0)
     X_turn = np.append(x_turn_train, -x_turn_train, axis=0)
