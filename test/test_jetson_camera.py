@@ -30,10 +30,10 @@ time.sleep(2)
 if cap.isOpened(): 
     ret_val, imageHQ = cap.read()
     imageHQ = cv2.cvtColor(imageHQ, cv2.COLOR_BGR2GRAY)
-    cv2.imwrite("test_image.jpg", imageHQ)
+    cv2.imwrite("test_image.png", imageHQ)
     arr = np.array(imageHQ)# / 255.0
-    arr = arr[-96:-36,:]
-    cv2.imwrite("test_image_resize.jpg", arr)
+    arr = arr[-96:-16,:]
+    cv2.imwrite("test_image_resize.png", arr)
 else: 
     print("Unable to open camera")
     
